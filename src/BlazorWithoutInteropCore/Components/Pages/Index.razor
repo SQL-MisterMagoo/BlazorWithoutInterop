@@ -1,0 +1,124 @@
+﻿@page "/"
+
+<h1>JSInterop? not here!</h1>
+
+<details>
+	<summary><h4>Javascript test runner</h4></summary>
+	<article>
+		<section>
+			<textarea id="js" name="js" bind="@MyJS" cols="80" rows="10" placeholder="Write some horrible js..." />
+		</section>
+		<button class="btn btn-danger" onclick="@(() => JsRun.RunJS(MyJS))">Run</button>
+		<JSRunner ref="JsRun" />
+	</article>
+</details>
+
+<details>
+	<summary><h4>File Upload test</h4></summary>
+	<article>
+		<section>
+			<textarea id="jsfile" name="jsfile" bind="@FileContents" cols="80" rows="10" placeholder="Upload a file..." />
+		</section>
+		<button class="btn btn-danger" id="btnUP">Upload</button>
+		<FileUploader ref="Fup" FileUploaded="@FileUploaded" TriggerId="btnUP" />
+	</article>
+</details>
+
+<details>
+	<summary><h4>Local Storage test</h4></summary>
+	<article>
+		<section>
+			<input id="st_test1" type="text" bind="@StTest.First" placeholder="Type anything..." />
+			<input id="st_test2" type="text" bind="@StTest.Second" placeholder="Type anything..." />
+		</section>
+		<button class="btn btn-danger" id="btnST" onclick="@(()=>STMode = "Write")">Save</button>
+		<button class="btn btn-success" id="btnRT" onclick="@(()=>STMode="Read")">Read</button>
+		<Storage Item="@StTest" Key="STTEST" Mode="@STMode" ItemRead="@OnSTRead" />
+	</article>
+</details>
+
+<details>
+	<summary><h4>Form Validation test</h4></summary>
+	<article>
+		<section>
+			<form id="loginform" class="@(FormValidated ? "was-validated" : "needs-validation")" novalidate onsubmit="@((e)=> Task.Delay(0))">
+				<div class="form-group">
+					<label for="loginName">Login Name</label>
+					<input id="loginName" type="text" class="form-control" bind="@Login.LoginName" placeholder="Enter login name or email..." required />
+					<div class="invalid-feedback">Please enter a valid login name or email to sign in.</div>
+				</div>
+				<div class="form-group">
+					<label for="password">Password</label>
+					<input id="password" type="password" class="form-control" bind="@Login.Password" placeholder="Enter password here..." required />
+					<div class="invalid-feedback">Please enter a valid password to sign in.</div>
+				</div>
+				<button class="btn btn-primary" id="btnLogin" onclick="@SignIn">Sign-In</button>
+				<JSRunner ref="JsRunForm" ValueReturned="@ValidationComplete" />
+			</form>
+		</section>
+		<section>
+			<div class="alert alert-danger @(LoginSucceeded ? "d-none" : "")">
+				Password and/or Login name not recognised.
+			</div>
+		</section>
+	</article>
+</details>
+
+@functions
+{
+		Components.DragonsBeHere.JSRunner JsRun;
+		string MyJS;
+		Components.DragonsBeHere.FileUploader Fup;
+		string FileContents;
+		string STMode;
+		StTestStruct StTest;
+		Components.DragonsBeHere.JSRunner JsRunForm;
+		LoginStruct Login;
+		bool LoginSucceeded = true;
+		bool FormValidated = false;
+
+		void ValidationComplete(string value)
+		{
+			bool.TryParse(value, out LoginSucceeded);
+			FormValidated = true;
+			LoginSucceeded = LoginSucceeded && Login.Password.Equals("Blazor");
+			StateHasChanged();
+		}
+
+		protected override void OnAfterRender()
+		{
+			base.OnAfterRender();
+		}
+
+		void FileUploaded(string name, string data)
+		{
+			FileContents = data;
+			StateHasChanged();
+		}
+
+		void OnSTRead(StTestStruct s)
+		{
+			StTest = s;
+			STMode = "";
+			StateHasChanged();
+		}
+
+		void SignIn()
+		{
+
+			JsRunForm.GetValueJS("loginform.checkValidity()");
+			FormValidated = true;
+		}
+
+		struct StTestStruct
+		{
+			public string First;
+			public string Second;
+		}
+
+		struct LoginStruct
+		{
+			public string LoginName;
+			public string Password; // Just for demo - don't do this.
+		}
+}
